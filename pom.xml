@@ -10,7 +10,7 @@
 
 	<properties>
 		<!-- 设置spring版本 -->
-		<spring.version>4.1.9.RELEASE</spring.version>
+		<spring.version>4.2.6.RELEASE</spring.version>
 	</properties>
 
 
