@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:jdbc="http://www.springframework.org/schema/jdbc" xmlns:context="http://www.springframework.org/schema/context" xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xsi:schemaLocation="
+     http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd
+     http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+     http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc-3.0.xsd
+     http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+     http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+     http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd">
+
+	<!-- 导入属性配置文件 -->
+	<context:property-placeholder location="" />
+
+	<!-- 通过druid配置数据库 -->
+	<bean id="stat-filter" class="com.alibaba.druid.filter.stat.StatFilter">
+		<property name="slowSqlMillis" value="10000" />
+		<property name="logSlowSql" value="true" />
+	</bean>
+
+	<!-- 配置数据源(h2内存数据库) -->
+	<bean id="dataSource" class="org.h2.jdbcx.JdbcConnectionPool" destroy-method="dispose">
+		<constructor-arg>
+			<bean class="org.h2.jdbcx.JdbcDataSource">
+				<!-- 内存模式 -->
+				<property name="URL" value="jdbc:h2:mem:test;MODE=Mysql;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE" />
+				<!-- 文件模式 -->
+				<!-- <property name="URL" value="jdbc:h2:testRestDB" /> -->
+				<property name="user" value="sa" />
+				<property name="password" value="sa" />
+			</bean>
+		</constructor-arg>
+	</bean>
+
+	<!-- 初始化数据表结构 -->
+	<jdbc:initialize-database data-source="dataSource" ignore-failures="ALL">
+		<jdbc:script location="classpath:database/create_table.sql" />
+		<jdbc:script location="classpath:database/import_data.sql" />
+	</jdbc:initialize-database>
+
+	<!-- 事务管理 -->
+	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<!-- enable component scanning (beware that this does not enable mapper scanning!) -->
+	<context:component-scan base-package="com.woohood.whprototype">
+		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller" />
+	</context:component-scan>
+
+	<!-- enable autowire -->
+	<context:annotation-config />
+
+	<!-- enable transaction demarcation with annotations -->
+	<tx:annotation-driven />
+
+	<!-- define the SqlSessionFactory -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="mapperLocations" value="classpath:mapper/*.xml" />
+		<property name="typeAliasesPackage" value="com.woohood.whprototype.model.database" />
+	</bean>
+
+	<!-- scan for mappers and let them be autowired -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="com.woohood.whprototype.dao.mapper" />
+	</bean>
+
+	<context:component-scan base-package="com.woohood.whprototype.controller">
+		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller" />
+	</context:component-scan>
+</beans>
